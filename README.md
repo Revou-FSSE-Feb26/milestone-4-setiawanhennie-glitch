@@ -1,1 +1,34 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/TLpjRxBx)
+# FinTrack API
+
+A personal finance/expense tracker backend API built with NestJS and PostgreSQL.
+
+## Overview
+
+FinTrack allows users to:
+- Connect multiple accounts (cash, bank, e-wallet)
+- Record transactions against accounts
+- Categorize transactions as income or expense
+- Track where their money goes
+
+## Database Schema
+
+See `docs/erd.png` for the entity-relationship diagram.
+
+### Tables:
+- **users**: User accounts with authentication
+- **accounts**: Financial accounts (cash, bank, e-wallet)
+- **categories**: Transaction categories (income/expense)
+- **transactions**: Financial transactions linked to accounts and categories
+
+## Prerequisites
+
+- Node.js (v18 or higher)
+- PostgreSQL (v14 or higher)
+- npm or yarn
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone <your-repo-url>
+cd fintrack-api
