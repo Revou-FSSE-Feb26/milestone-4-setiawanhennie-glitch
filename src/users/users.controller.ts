@@ -1,5 +1,6 @@
 import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
-import { UsersService, User } from './users.service';
+import { UsersService } from './users.service';
+import { User } from './dto/create-user.dto';
 
 @Controller('users')
 export class UsersController {

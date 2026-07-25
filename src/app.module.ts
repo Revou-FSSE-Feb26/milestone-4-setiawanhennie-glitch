@@ -9,7 +9,6 @@ import { TransactionsModule } from './transactions/transactions.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
     }),
     UsersModule,
     AccountsModule,

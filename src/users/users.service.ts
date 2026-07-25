@@ -1,14 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-  password: string;
-  role: string;
-  created_at: Date;
-}
+import { User } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -19,7 +10,7 @@ export class UsersService {
       email: 'alice@example.com',
       password: 'hashed_password_1',
       role: 'user',
-      created_at: new Date(),
+      created_at: new Date('2026-07-01'),
     },
     {
       id: 2,
@@ -27,11 +18,17 @@ export class UsersService {
       email: 'bob@example.com',
       password: 'hashed_password_2',
       role: 'user',
-      created_at: new Date(),
+      created_at: new Date('2026-07-01'),
+    },
+    {
+      id: 3,
+      name: 'Carol Williams',
+      email: 'carol@example.com',
+      password: 'hashed_password_3',
+      role: 'admin',
+      created_at: new Date('2026-07-01'),
     },
   ];
-
-  constructor(private configService: ConfigService) {}
 
   findAll(): User[] {
     return this.mockUsers;
