@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { User } from './dto/create-user.dto';
+import { User, CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -30,10 +30,28 @@ export class UsersService {
     },
   ];
 
+  private nextId = 4;
+
+  // CREATE
+  create(dto: CreateUserDto): User {
+    const newUser: User = {
+      id: this.nextId++,
+      name: dto.name,
+      email: dto.email,
+      password: dto.password,
+      role: dto.role || 'user',
+      created_at: new Date(),
+    };
+    this.mockUsers.push(newUser);
+    return newUser;
+  }
+
+  // READ ALL
   findAll(): User[] {
     return this.mockUsers;
   }
 
+  // READ ONE
   findOne(id: number): User | undefined {
     return this.mockUsers.find(user => user.id === id);
   }

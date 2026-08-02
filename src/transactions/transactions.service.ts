@@ -1,5 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { Transaction } from './dto/create-transaction.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { 
+  Transaction, 
+  CreateTransactionDto, 
+  UpdateTransactionDto 
+} from './dto/create-transaction.dto';
+import { AccountsService } from '../accounts/accounts.service';
 
 @Injectable()
 export class TransactionsService {
@@ -56,23 +61,126 @@ export class TransactionsService {
     },
   ];
 
+  private nextId = 6;
+
+  constructor(private readonly accountsService: AccountsService) {}
+
+  // CREATE (with balance update)
+  create(dto: CreateTransactionDto): Transaction {
+    const newTransaction: Transaction = {
+      id: this.nextId++,
+      account_id: dto.accountId,
+      category_id: dto.categoryId,
+      type: dto.type,
+      amount: dto.amount,
+      description: dto.description || '',
+      transaction_date: new Date(dto.transaction_date),
+      created_at: new Date(),
+    };
+
+    this.mockTransactions.push(newTransaction);
+
+    // Update account balance
+    if (dto.type === 'income' || dto.type === 'expense') {
+      this.accountsService.updateBalance(
+        dto.accountId,
+        dto.amount,
+        dto.type
+      );
+    }
+
+    return newTransaction;
+  }
+
+  // READ ALL
   findAll(): Transaction[] {
     return this.mockTransactions;
   }
 
-  findOne(id: number): Transaction | undefined {
-    return this.mockTransactions.find(transaction => transaction.id === id);
+  // READ ONE
+  findOne(id: number): Transaction {
+    const transaction = this.mockTransactions.find(t => t.id === id);
+    if (!transaction) {
+      throw new NotFoundException(`Transaction with ID ${id} not found`);
+    }
+    return transaction;
   }
 
+  // FIND BY ACCOUNT
   findByAccountId(accountId: number): Transaction[] {
-    return this.mockTransactions.filter(
-      transaction => transaction.account_id === accountId,
-    );
+    return this.mockTransactions.filter(t => t.account_id === accountId);
   }
 
+  // FIND BY TYPE
   findByType(type: string): Transaction[] {
-    return this.mockTransactions.filter(
-      transaction => transaction.type === type,
-    );
+    return this.mockTransactions.filter(t => t.type === type);
+  }
+
+  // UPDATE (with balance recalculation)
+  update(id: number, dto: UpdateTransactionDto): Transaction {
+    const transactionIndex = this.mockTransactions.findIndex(t => t.id === id);
+    if (transactionIndex === -1) {
+      throw new NotFoundException(`Transaction with ID ${id} not found`);
+    }
+
+    const oldTransaction = this.mockTransactions[transactionIndex];
+
+    // Reverse the old transaction's effect on balance
+    if (oldTransaction.type === 'income' || oldTransaction.type === 'expense') {
+      const reverseAmount = oldTransaction.type === 'income' 
+        ? -oldTransaction.amount 
+        : oldTransaction.amount;
+      this.accountsService.updateBalance(
+        oldTransaction.account_id,
+        reverseAmount,
+        oldTransaction.type === 'income' ? 'expense' : 'income'
+      );
+    }
+
+    // Update the transaction
+    const updatedTransaction: Transaction = {
+      ...oldTransaction,
+      ...dto,
+      transaction_date: dto.transaction_date 
+        ? new Date(dto.transaction_date) 
+        : oldTransaction.transaction_date,
+    };
+
+    this.mockTransactions[transactionIndex] = updatedTransaction;
+
+    // Apply the new transaction's effect on balance
+    if (dto.type === 'income' || dto.type === 'expense') {
+      this.accountsService.updateBalance(
+        dto.accountId || oldTransaction.account_id,
+        dto.amount || updatedTransaction.amount,
+        dto.type || updatedTransaction.type
+      );
+    }
+
+    return updatedTransaction;
+  }
+
+  // DELETE (with balance recalculation)
+  delete(id: number): void {
+    const transactionIndex = this.mockTransactions.findIndex(t => t.id === id);
+    if (transactionIndex === -1) {
+      throw new NotFoundException(`Transaction with ID ${id} not found`);
+    }
+
+    const transaction = this.mockTransactions[transactionIndex];
+
+    // Reverse the transaction's effect on balance
+    if (transaction.type === 'income' || transaction.type === 'expense') {
+      const reverseAmount = transaction.type === 'income' 
+        ? -transaction.amount 
+        : transaction.amount;
+      this.accountsService.updateBalance(
+        transaction.account_id,
+        reverseAmount,
+        transaction.type === 'income' ? 'expense' : 'income'
+      );
+    }
+
+    this.mockTransactions.splice(transactionIndex, 1);
   }
 }

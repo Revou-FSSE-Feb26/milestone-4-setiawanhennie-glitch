@@ -8,6 +8,16 @@ export class CreateCategoryDto {
   type: string;
 }
 
+export class UpdateCategoryDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsEnum(['income', 'expense'])
+  @IsOptional()
+  type?: string;
+}
+
 export class Category {
   id: number;
   name: string;

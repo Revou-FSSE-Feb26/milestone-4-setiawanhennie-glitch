@@ -1,16 +1,24 @@
-import { IsString, IsNumber, IsEnum, IsOptional, IsDateString } from 'class-validator';
+import { 
+  IsString, 
+  IsNumber, 
+  IsEnum, 
+  IsOptional, 
+  IsDateString,
+  Min 
+} from 'class-validator';
 
 export class CreateTransactionDto {
-  @IsString()
-  accountId: string;
+  @IsNumber()
+  accountId: number;
 
-  @IsString()
-  categoryId: string;
+  @IsNumber()
+  categoryId: number;
 
   @IsEnum(['income', 'expense', 'transfer'])
   type: string;
 
   @IsNumber()
+  @Min(0.01)
   amount: number;
 
   @IsString()
@@ -19,6 +27,33 @@ export class CreateTransactionDto {
 
   @IsDateString()
   transaction_date: string;
+}
+
+export class UpdateTransactionDto {
+  @IsNumber()
+  @IsOptional()
+  accountId?: number;
+
+  @IsNumber()
+  @IsOptional()
+  categoryId?: number;
+
+  @IsEnum(['income', 'expense', 'transfer'])
+  @IsOptional()
+  type?: string;
+
+  @IsNumber()
+  @Min(0.01)
+  @IsOptional()
+  amount?: number;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsDateString()
+  @IsOptional()
+  transaction_date?: string;
 }
 
 export class Transaction {
