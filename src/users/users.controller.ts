@@ -12,12 +12,21 @@ export class UsersController {
   }
 
   @Get()
-  findAll(): User[] {
+  findAll(@Query('include') include?: string) {
+    if (include === 'accounts') {
+      return this.usersService.findAllWithAccounts();
+    }
     return this.usersService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number): User | undefined {
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('include') include?: string,
+  ) {
+    if (include === 'accounts') {
+      return this.usersService.findOneWithAccounts(id);
+    }
     return this.usersService.findOne(id);
   }
 }

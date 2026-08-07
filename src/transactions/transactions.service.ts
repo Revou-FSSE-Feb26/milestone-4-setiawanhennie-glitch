@@ -1,186 +1,154 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { 
-  Transaction, 
-  CreateTransactionDto, 
-  UpdateTransactionDto 
-} from './dto/create-transaction.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateTransactionDto, UpdateTransactionDto } from './dto/create-transaction.dto';
 import { AccountsService } from '../accounts/accounts.service';
 
 @Injectable()
 export class TransactionsService {
-  private mockTransactions: Transaction[] = [
-    {
-      id: 1,
-      account_id: 1,
-      category_id: 1,
-      type: 'income',
-      amount: 3500.00,
-      description: 'Monthly salary',
-      transaction_date: new Date('2026-07-01'),
-      created_at: new Date('2026-07-01'),
-    },
-    {
-      id: 2,
-      account_id: 1,
-      category_id: 4,
-      type: 'expense',
-      amount: 150.75,
-      description: 'Weekly groceries',
-      transaction_date: new Date('2026-07-05'),
-      created_at: new Date('2026-07-05'),
-    },
-    {
-      id: 3,
-      account_id: 1,
-      category_id: 5,
-      type: 'expense',
-      amount: 1200.00,
-      description: 'July rent',
-      transaction_date: new Date('2026-07-01'),
-      created_at: new Date('2026-07-01'),
-    },
-    {
-      id: 4,
-      account_id: 1,
-      category_id: 6,
-      type: 'expense',
-      amount: 85.50,
-      description: 'Electric bill',
-      transaction_date: new Date('2026-07-10'),
-      created_at: new Date('2026-07-10'),
-    },
-    {
-      id: 5,
-      account_id: 2,
-      category_id: 1,
-      type: 'income',
-      amount: 500.00,
-      description: 'Interest payment',
-      transaction_date: new Date('2026-07-15'),
-      created_at: new Date('2026-07-15'),
-    },
-  ];
+  constructor(
+    private prisma: PrismaService,
+    private accountsService: AccountsService,
+  ) {}
 
-  private nextId = 6;
-
-  constructor(private readonly accountsService: AccountsService) {}
-
-  // CREATE (with balance update)
-  create(dto: CreateTransactionDto): Transaction {
-    const newTransaction: Transaction = {
-      id: this.nextId++,
-      account_id: dto.accountId,
-      category_id: dto.categoryId,
-      type: dto.type,
-      amount: dto.amount,
-      description: dto.description || '',
-      transaction_date: new Date(dto.transaction_date),
-      created_at: new Date(),
-    };
-
-    this.mockTransactions.push(newTransaction);
+  async create(dto: CreateTransactionDto) {
+    const transaction = await this.prisma.transaction.create({
+      data: {
+        account_id: dto.accountId,
+        category_id: dto.categoryId,
+        type: dto.type,
+        amount: dto.amount,
+        description: dto.description,
+        transaction_date: new Date(dto.transaction_date),
+      },
+    });
 
     // Update account balance
     if (dto.type === 'income' || dto.type === 'expense') {
-      this.accountsService.updateBalance(
+      await this.accountsService.updateBalance(
         dto.accountId,
         dto.amount,
-        dto.type
+        dto.type,
       );
     }
 
-    return newTransaction;
+    return transaction;
   }
 
-  // READ ALL
-  findAll(): Transaction[] {
-    return this.mockTransactions;
+  async findAll() {
+    return this.prisma.transaction.findMany();
   }
 
-  // READ ONE
-  findOne(id: number): Transaction {
-    const transaction = this.mockTransactions.find(t => t.id === id);
+  async findOne(id: number) {
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { id },
+    });
     if (!transaction) {
       throw new NotFoundException(`Transaction with ID ${id} not found`);
     }
     return transaction;
   }
 
-  // FIND BY ACCOUNT
-  findByAccountId(accountId: number): Transaction[] {
-    return this.mockTransactions.filter(t => t.account_id === accountId);
+  async findByAccountId(accountId: number) {
+    return this.prisma.transaction.findMany({
+      where: { account_id: accountId },
+    });
   }
 
-  // FIND BY TYPE
-  findByType(type: string): Transaction[] {
-    return this.mockTransactions.filter(t => t.type === type);
+  async findByType(type: string) {
+    return this.prisma.transaction.findMany({
+      where: { type },
+    });
   }
 
-  // UPDATE (with balance recalculation)
-  update(id: number, dto: UpdateTransactionDto): Transaction {
-    const transactionIndex = this.mockTransactions.findIndex(t => t.id === id);
-    if (transactionIndex === -1) {
-      throw new NotFoundException(`Transaction with ID ${id} not found`);
-    }
+  async update(id: number, dto: UpdateTransactionDto) {
+    const oldTransaction = await this.findOne(id);
 
-    const oldTransaction = this.mockTransactions[transactionIndex];
-
-    // Reverse the old transaction's effect on balance
+    // Reverse old transaction's effect
     if (oldTransaction.type === 'income' || oldTransaction.type === 'expense') {
       const reverseAmount = oldTransaction.type === 'income' 
-        ? -oldTransaction.amount 
-        : oldTransaction.amount;
-      this.accountsService.updateBalance(
+        ? -oldTransaction.amount.toNumber() 
+        : oldTransaction.amount.toNumber();
+      await this.accountsService.updateBalance(
         oldTransaction.account_id,
         reverseAmount,
-        oldTransaction.type === 'income' ? 'expense' : 'income'
+        oldTransaction.type === 'income' ? 'expense' : 'income',
       );
     }
 
-    // Update the transaction
-    const updatedTransaction: Transaction = {
-      ...oldTransaction,
-      ...dto,
-      transaction_date: dto.transaction_date 
-        ? new Date(dto.transaction_date) 
-        : oldTransaction.transaction_date,
-    };
+    // Update transaction
+    const updatedTransaction = await this.prisma.transaction.update({
+      where: { id },
+      data: {
+        account_id: dto.accountId,
+        category_id: dto.categoryId,
+        type: dto.type,
+        amount: dto.amount,
+        description: dto.description,
+        transaction_date: dto.transaction_date 
+          ? new Date(dto.transaction_date) 
+          : undefined,
+      },
+    });
 
-    this.mockTransactions[transactionIndex] = updatedTransaction;
-
-    // Apply the new transaction's effect on balance
+    // Apply new transaction's effect
     if (dto.type === 'income' || dto.type === 'expense') {
-      this.accountsService.updateBalance(
+      await this.accountsService.updateBalance(
         dto.accountId || oldTransaction.account_id,
-        dto.amount || updatedTransaction.amount,
-        dto.type || updatedTransaction.type
+        dto.amount || updatedTransaction.amount.toNumber(),
+        dto.type || updatedTransaction.type,
       );
     }
 
     return updatedTransaction;
   }
 
-  // DELETE (with balance recalculation)
-  delete(id: number): void {
-    const transactionIndex = this.mockTransactions.findIndex(t => t.id === id);
-    if (transactionIndex === -1) {
-      throw new NotFoundException(`Transaction with ID ${id} not found`);
-    }
+  async delete(id: number) {
+    const transaction = await this.findOne(id);
 
-    const transaction = this.mockTransactions[transactionIndex];
-
-    // Reverse the transaction's effect on balance
+    // Reverse transaction's effect
     if (transaction.type === 'income' || transaction.type === 'expense') {
       const reverseAmount = transaction.type === 'income' 
-        ? -transaction.amount 
-        : transaction.amount;
-      this.accountsService.updateBalance(
+        ? -transaction.amount.toNumber() 
+        : transaction.amount.toNumber();
+      await this.accountsService.updateBalance(
         transaction.account_id,
         reverseAmount,
-        transaction.type === 'income' ? 'expense' : 'income'
+        transaction.type === 'income' ? 'expense' : 'income',
       );
     }
 
-    this.mockTransactions.splice(transactionIndex, 1);
+    await this.prisma.transaction.delete({
+      where: { id },
+    });
+  }
+
+  async findAllWithCategory() {
+  return this.prisma.transaction.findMany({
+    include: {
+      category: true,
+    },
+  });
+}
+
+  async findOneWithCategory(id: number) {
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { id },
+      include: {
+        category: true,
+      },
+    });
+    if (!transaction) {
+      throw new NotFoundException(`Transaction with ID ${id} not found`);
+    }
+    return transaction;
+  }
+
+  async findByTypeWithCategory(type: string) {
+    return this.prisma.transaction.findMany({
+      where: { type },
+      include: {
+        category: true,
+      },
+    });
   }
 }

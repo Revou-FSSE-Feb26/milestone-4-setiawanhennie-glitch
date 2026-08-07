@@ -1,83 +1,33 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Account, CreateAccountDto, UpdateAccountDto } from './dto/create-account.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateAccountDto, UpdateAccountDto } from './dto/create-account.dto';
 
 @Injectable()
 export class AccountsService {
-  private mockAccounts: Account[] = [
-    {
-      id: 1,
-      user_id: 1,
-      name: 'Alice Checking',
-      type: 'bank',
-      balance: 2500.00,
-      created_at: new Date('2026-07-01'),
-    },
-    {
-      id: 2,
-      user_id: 1,
-      name: 'Alice Savings',
-      type: 'bank',
-      balance: 10000.00,
-      created_at: new Date('2026-07-01'),
-    },
-    {
-      id: 3,
-      user_id: 1,
-      name: 'Alice Cash',
-      type: 'cash',
-      balance: 150.00,
-      created_at: new Date('2026-07-01'),
-    },
-    {
-      id: 4,
-      user_id: 2,
-      name: 'Bob Main Account',
-      type: 'bank',
-      balance: 1800.50,
-      created_at: new Date('2026-07-01'),
-    },
-    {
-      id: 5,
-      user_id: 2,
-      name: 'Bob E-Wallet',
-      type: 'e-wallet',
-      balance: 300.00,
-      created_at: new Date('2026-07-01'),
-    },
-    {
-      id: 6,
-      user_id: 3,
-      name: 'Carol Business',
-      type: 'bank',
-      balance: 15000.00,
-      created_at: new Date('2026-07-01'),
-    },
-  ];
-
-  private nextId = 7;
+  constructor(private prisma: PrismaService) {}
 
   // CREATE
-  create(dto: CreateAccountDto): Account {
-    const newAccount: Account = {
-      id: this.nextId++,
-      user_id: dto.userId,
-      name: dto.name,
-      type: dto.type,
-      balance: dto.balance || 0,
-      created_at: new Date(),
-    };
-    this.mockAccounts.push(newAccount);
-    return newAccount;
+  async create(dto: CreateAccountDto) {
+    return this.prisma.account.create({
+      data: {
+        user_id: dto.userId,
+        name: dto.name,
+        type: dto.type,
+        balance: dto.balance || 0,
+      },
+    });
   }
 
   // READ ALL
-  findAll(): Account[] {
-    return this.mockAccounts;
+  async findAll() {
+    return this.prisma.account.findMany();
   }
 
   // READ ONE
-  findOne(id: number): Account {
-    const account = this.mockAccounts.find(acc => acc.id === id);
+  async findOne(id: number) {
+    const account = await this.prisma.account.findUnique({
+      where: { id },
+    });
     if (!account) {
       throw new NotFoundException(`Account with ID ${id} not found`);
     }
@@ -85,50 +35,92 @@ export class AccountsService {
   }
 
   // FIND BY USER
-  findByUserId(userId: number): Account[] {
-    return this.mockAccounts.filter(acc => acc.user_id === userId);
+  async findByUserId(userId: number) {
+    return this.prisma.account.findMany({
+      where: { user_id: userId },
+    });
   }
 
   // UPDATE
-  update(id: number, dto: UpdateAccountDto): Account {
-    const accountIndex = this.mockAccounts.findIndex(acc => acc.id === id);
-    if (accountIndex === -1) {
+  async update(id: number, dto: UpdateAccountDto) {
+    const account = await this.prisma.account.findUnique({
+      where: { id },
+    });
+    if (!account) {
       throw new NotFoundException(`Account with ID ${id} not found`);
     }
 
-    this.mockAccounts[accountIndex] = {
-      ...this.mockAccounts[accountIndex],
-      ...dto,
-    };
-
-    return this.mockAccounts[accountIndex];
+    return this.prisma.account.update({
+      where: { id },
+      data: dto,
+    });
   }
 
   // DELETE
-  delete(id: number): void {
-    const accountIndex = this.mockAccounts.findIndex(acc => acc.id === id);
-    if (accountIndex === -1) {
+  async delete(id: number) {
+    const account = await this.prisma.account.findUnique({
+      where: { id },
+    });
+    if (!account) {
       throw new NotFoundException(`Account with ID ${id} not found`);
     }
-    this.mockAccounts.splice(accountIndex, 1);
+
+    await this.prisma.account.delete({
+      where: { id },
+    });
   }
 
   // BALANCE UPDATE (for transactions)
-  updateBalance(accountId: number, amount: number, type: string): Account {
-    const account = this.findOne(accountId);
-    const accountIndex = this.mockAccounts.findIndex(acc => acc.id === accountId);
+  async updateBalance(accountId: number, amount: number, type: string) {
+    const account = await this.findOne(accountId);
+    let newBalance = account.balance.toNumber();
 
     if (type === 'income') {
-      this.mockAccounts[accountIndex].balance += amount;
+      newBalance += amount;
     } else if (type === 'expense') {
-      this.mockAccounts[accountIndex].balance -= amount;
+      newBalance -= amount;
     }
-    return this.mockAccounts[accountIndex];
+
+    return this.prisma.account.update({
+      where: { id: accountId },
+      data: { balance: newBalance },
+    });
   }
 
   // GET CURRENT BALANCE
-  getBalance(accountId: number): number {
-    const account = this.findOne(accountId);
-    return account.balance;
+  async getBalance(accountId: number) {
+    const account = await this.findOne(accountId);
+    return account.balance.toNumber();
+  }
+
+  // Add to AccountsService
+
+  async findAllWithTransactions() {
+    return this.prisma.account.findMany({
+      include: {
+        transactions: {
+          include: {
+            category: true,
+          },
+        },
+      },
+    });
+  }
+
+  async findOneWithTransactions(id: number) {
+    const account = await this.prisma.account.findUnique({
+      where: { id },
+      include: {
+        transactions: {
+          include: {
+            category: true,
+          },
+        },
+      },
+    });
+    if (!account) {
+      throw new NotFoundException(`Account with ID ${id} not found`);
+    }
+    return account;
   }
 }

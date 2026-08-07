@@ -1,58 +1,40 @@
 import { Injectable } from '@nestjs/common';
-import { User, CreateUserDto } from './dto/create-user.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService {
-  private mockUsers: User[] = [
-    {
-      id: 1,
-      name: 'Alice Johnson',
-      email: 'alice@example.com',
-      password: 'hashed_password_1',
-      role: 'user',
-      created_at: new Date('2026-07-01'),
-    },
-    {
-      id: 2,
-      name: 'Bob Smith',
-      email: 'bob@example.com',
-      password: 'hashed_password_2',
-      role: 'user',
-      created_at: new Date('2026-07-01'),
-    },
-    {
-      id: 3,
-      name: 'Carol Williams',
-      email: 'carol@example.com',
-      password: 'hashed_password_3',
-      role: 'admin',
-      created_at: new Date('2026-07-01'),
-    },
-  ];
+  constructor(private prisma: PrismaService) {}
 
-  private nextId = 4;
-
-  // CREATE
-  create(dto: CreateUserDto): User {
-    const newUser: User = {
-      id: this.nextId++,
-      name: dto.name,
-      email: dto.email,
-      password: dto.password,
-      role: dto.role || 'user',
-      created_at: new Date(),
-    };
-    this.mockUsers.push(newUser);
-    return newUser;
+  async create(dto: CreateUserDto) {
+    return this.prisma.user.create({
+      data: {
+        name: dto.name,
+        email: dto.email,
+        password: dto.password,
+        role: dto.role || 'user',
+      },
+    });
   }
 
-  // READ ALL
-  findAll(): User[] {
-    return this.mockUsers;
+  async findAllWithAccounts() {
+    return this.prisma.user.findMany({
+      include: {
+        accounts: true,
+      },
+    });
   }
 
-  // READ ONE
-  findOne(id: number): User | undefined {
-    return this.mockUsers.find(user => user.id === id);
+  async findOneWithAccounts(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        accounts: true,
+      },
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
   }
 }

@@ -15,18 +15,31 @@ export class TransactionsController {
   findAll(
     @Query('type') type?: string,
     @Query('account_id') accountId?: string,
-  ): Transaction[] {
+    @Query('include') include?: string,
+  ) {
     if (accountId) {
       return this.transactionsService.findByAccountId(Number(accountId));
     }
     if (type) {
+      if (include === 'category') {
+        return this.transactionsService.findByTypeWithCategory(type);
+      }
       return this.transactionsService.findByType(type);
+    }
+    if (include === 'category') {
+      return this.transactionsService.findAllWithCategory();
     }
     return this.transactionsService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number): Transaction {
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('include') include?: string,
+  ) {
+    if (include === 'category') {
+      return this.transactionsService.findOneWithCategory(id);
+    }
     return this.transactionsService.findOne(id);
   }
 
