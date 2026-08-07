@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAccountDto, UpdateAccountDto } from './dto/create-account.dto';
+import { BalanceCalculatorService } from 'src/balance/balance-calculator.service';
 
 @Injectable()
 export class AccountsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private calculator: BalanceCalculatorService,
+  ) {}
 
   // CREATE
   async create(dto: CreateAccountDto) {
@@ -122,5 +126,19 @@ export class AccountsService {
       throw new NotFoundException(`Account with ID ${id} not found`);
     }
     return account;
+  }
+
+    // Apply a transaction's effect to the balance
+  async applyToBalance(accountId: number, type: TransactionType, amount: number) {
+    const account = await this.findOne(accountId);
+    const balance = this.calculator.apply(account.balance.toNumber(), type, amount);
+    return this.prisma.account.update({ where: { id: accountId }, data: { balance } });
+  }
+
+  // Undo a transaction's effect on the balance
+  async reverseOnBalance(accountId: number, type: TransactionType, amount: number) {
+    const account = await this.findOne(accountId);
+    const balance = this.calculator.reverse(account.balance.toNumber(), type, amount);
+    return this.prisma.account.update({ where: { id: accountId }, data: { balance } });
   }
 }
