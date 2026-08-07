@@ -30,9 +30,9 @@ export class CategoriesService {
     return category;
   }
 
-  async findByType(type: CategoryType) {
+  async findByType(type: string) {
     return this.prisma.category.findMany({
-      where: { type },
+      where: { type: type as CategoryType },
     });
   }
 

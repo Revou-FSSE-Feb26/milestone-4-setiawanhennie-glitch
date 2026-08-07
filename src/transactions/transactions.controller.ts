@@ -50,10 +50,4 @@ export class TransactionsController {
   ) {
     return this.transactionsService.update(id, dto);
   }
-
-  @Delete(':id')
-  delete(@Param('id', ParseIntPipe) id: number) {
-    this.transactionsService.delete(id);
-    return { message: `Transaction ${id} deleted successfully` };
-  }
 }

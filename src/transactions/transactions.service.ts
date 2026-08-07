@@ -55,12 +55,6 @@ export class TransactionsService {
     });
   }
 
-  async findByType(type: TransactionType) {
-    return this.prisma.transaction.findMany({
-      where: { type },
-    });
-  }
-
   async update(id: number, dto: UpdateTransactionDto) {
     const oldTransaction = await this.findOne(id);
 
@@ -150,12 +144,18 @@ export class TransactionsService {
     return transaction;
   }
 
-  async findByTypeWithCategory(type: string) {
+    async findByTypeWithCategory(type: string) {
     return this.prisma.transaction.findMany({
       where: { type: type as TransactionType },
       include: {
         category: true,
       },
+    });
+  }
+
+  async findByType(type: string) {
+    return this.prisma.transaction.findMany({
+      where: { type: type as TransactionType },
     });
   }
 }
