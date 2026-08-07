@@ -1,14 +1,21 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, ParseIntPipe, Query } from '@nestjs/common';
+import {
+  Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards,
+} from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
-import { UpdateTransactionDto, CreateTransactionDto } from './dto/create-transaction.dto';
+import { CreateTransactionDto, UpdateTransactionDto } from './dto/create-transaction.dto';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { JwtPayload } from '../auth/dto/auth.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('transactions')
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 
   @Post()
-  create(@Body() dto: CreateTransactionDto) {
-    return this.transactionsService.create(dto);
+  create(@Body() dto: CreateTransactionDto, @CurrentUser() user: JwtPayload) {
+    return this.transactionsService.createFor(user, dto);
   }
 
   @Get()
@@ -16,38 +23,41 @@ export class TransactionsController {
     @Query('type') type?: string,
     @Query('account_id') accountId?: string,
     @Query('include') include?: string,
+    @CurrentUser() user?: JwtPayload,
   ) {
     if (accountId) {
-      return this.transactionsService.findByAccountId(Number(accountId));
+      return this.transactionsService.findByAccountIdFor(user, Number(accountId));
     }
-    if (type) {
-      if (include === 'category') {
-        return this.transactionsService.findByTypeWithCategory(type);
-      }
-      return this.transactionsService.findByType(type);
+    if (type && include === 'category') {
+      return this.transactionsService.findByTypeWithCategoryFor(user, type);
     }
+    if (type) return this.transactionsService.findByTypeFor(user, type);
     if (include === 'category') {
-      return this.transactionsService.findAllWithCategory();
+      return this.transactionsService.findAllWithCategoryFor(user);
     }
-    return this.transactionsService.findAll();
+    return this.transactionsService.findAllFor(user);
   }
 
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
     @Query('include') include?: string,
+    @CurrentUser() user?: JwtPayload,
   ) {
-    if (include === 'category') {
-      return this.transactionsService.findOneWithCategory(id);
-    }
-    return this.transactionsService.findOne(id);
+    return this.transactionsService.findOneFor(user, id, include === 'category');
   }
 
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateTransactionDto
+    @Body() dto: UpdateTransactionDto,
+    @CurrentUser() user: JwtPayload,
   ) {
-    return this.transactionsService.update(id, dto);
+    return this.transactionsService.updateFor(user, id, dto);
+  }
+
+  @Delete(':id')
+  delete(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: JwtPayload) {
+    return this.transactionsService.deleteFor(user, id);
   }
 }

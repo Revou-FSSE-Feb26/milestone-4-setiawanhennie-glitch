@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateTransactionDto, UpdateTransactionDto } from './dto/create-transaction.dto';
 import { AccountsService } from '../accounts/accounts.service';
 import { TransactionType } from '@prisma/client';
+import { JwtPayload } from '../auth/dto/auth.dto';
+import { ForbiddenException } from '@nestjs/common';
 
 @Injectable()
 export class TransactionsService {
@@ -141,4 +143,43 @@ export class TransactionsService {
       },
     });
   }
+
+  private isAdmin(user: JwtPayload) {
+  return user.role === 'admin';
+}
+
+private scopeWhere(user: JwtPayload) {
+  return this.isAdmin(user) ? {} : { account: { user_id: user.sub } };
+}
+
+private async assertOwnsAccount(user: JwtPayload, accountId: number) {
+  const account = await this.prisma.account.findUnique({ where: { id: accountId } });
+  if (!account) throw new NotFoundException(`Account with ID ${accountId} not found`);
+  if (!this.isAdmin(user) && account.user_id !== user.sub) {
+    throw n…iption: dto.description,
+      transaction_date: dto.transaction_date ? new Date(dto.transaction_date) : undefined,
+    },
+  });
+
+  // Apply new effect
+  const effType = dto.type ?? updated.type;
+  const effAccountId = dto.accountId ?? old.account_id;
+  const effAmount = dto.amount ?? updated.amount.toNumber();
+  if (effType === TransactionType.income || effType === TransactionType.expense) {
+    await this.accountsService.applyToBalance(effAccountId, effType, effAmount);
+  }
+  return updated;
+}
+async deleteFor(user: JwtPayload, id: number) {
+  const t = await this.getOwnedTransaction(user, id);
+
+  if (t.type === TransactionType.income || t.type === TransactionType.expense) {
+    await this.accountsService.reverseOnBalance(
+      t.account_id, t.type, t.amount.toNumber(),
+    );
+  }
+
+  await this.prisma.transaction.delete({ where: { id } });
+  return { message: `Transaction ${id} deleted successfully` };
+}
 }

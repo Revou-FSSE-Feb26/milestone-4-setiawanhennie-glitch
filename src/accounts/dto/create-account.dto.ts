@@ -14,7 +14,8 @@ export class CreateAccountDto {
   balance?: number;
 
   @IsNumber()
-  userId: number;
+  @IsOptional()
+  userId?: number;
 }
 
 export class UpdateAccountDto {

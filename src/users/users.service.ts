@@ -1,48 +1,27 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateUserDto } from './dto/create-user.dto';
+import { JwtPayload } from '../auth/dto/auth.dto';
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async create(dto: CreateUserDto) {
-    return this.prisma.user.create({
-      data: {
-        name: dto.name,
-        email: dto.email,
-        password: dto.password,
-        role: dto.role || 'user',
-      },
-    });
+  private sanitize(user: any) {
+    const { password, ...safe } = user;
+    return safe;
   }
 
   async findAll() {
-    return this.prisma.user.findMany();
+    const users = await this.prisma.user.findMany();
+    return users.map((u) => this.sanitize(u)); // hashes never leave the API
   }
 
-  async findOne(id: number) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+  async findOneFor(user: JwtPayload, id: number) {
+    if (user.role !== 'admin' && user.sub !== id) {
+      throw new ForbiddenException('You can only view your own profile');
     }
-    return user;
-  }
-
-  async findAllWithAccounts() {
-    return this.prisma.user.findMany({
-      include: { accounts: true },
-    });
-  }
-
-  async findOneWithAccounts(id: number) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      include: { accounts: true },
-    });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-    return user;
+    const found = await this.prisma.user.findUnique({ where: { id } });
+    if (!found) throw new NotFoundException(`User with ID ${id} not found`);
+    return this.sanitize(found);
   }
 }
