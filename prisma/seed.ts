@@ -7,11 +7,13 @@ async function main() {
   console.log('Start seeding ...');
 
   // Create Users
+  const hashedPassword = await bcrypt.hash('password123', 10);
+
   const alice = await prisma.user.create({
     data: {
       name: 'Alice Johnson',
       email: 'alice@example.com',
-      password: await bcrypt.hash('password1', 10),
+      password: hashedPassword,
       role: 'user',
     },
   });
@@ -20,7 +22,7 @@ async function main() {
     data: {
       name: 'Bob Smith',
       email: 'bob@example.com',
-      password: await bcrypt.hash('password2', 10),
+      password: hashedPassword,
       role: 'user',
     },
   });
@@ -29,7 +31,7 @@ async function main() {
     data: {
       name: 'Carol Williams',
       email: 'carol@example.com',
-      password: await bcrypt.hash('password3', 10),
+      password: hashedPassword,
       role: 'admin',
     },
   });
