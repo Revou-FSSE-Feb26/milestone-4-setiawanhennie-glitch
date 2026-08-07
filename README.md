@@ -40,15 +40,15 @@ A personal-finance tracker backend built with **NestJS**, **TypeScript**, **Pris
 ```bash
 # 1. Clone & install
 git clone <your-repo-url>
-cd milestone-4-setiawanhennie-glitch
+cd <your-repo-url>
 npm install
 
 # 2. Configure environment
-cp .env.example .env   # then fill in your values
+cp .env.example .env
 
 # 3. Create schema + seed data
 npx prisma migrate dev
-npx prisma db seed     # seeds demo users (bcrypt-hashed), accounts, categories, transactions
+npx prisma db seed
 
 # 4. Run
 npm run start:dev      # API at http://localhost:3000
@@ -199,14 +199,4 @@ The balance rules (income adds, expense subtracts, transfer is neutral) were pre
 - Rate limiting is **per-instance in-memory** (not shared across multiple replicas).
 - JWTs are stateless: no token revocation/blacklist before expiry.
 - `transfer` transactions do not yet move money between two accounts.
-- Hosted on Railway's free trial (30 days / $5 credit).
-````
-
----
-
-### Before committing:
-1. Replace `<your-repo-url>` and `https://<live-url>` with your real links.
-2. Make sure `docs/erd.png` exists (you created it in Part 1).
-3. Then: `git add . && git commit -m "docs: final README" && git push`
-
-Want me to help you update `docs/api-smoke-test.md` with the auth examples next? 📝
+- Hosted on Railway's free trial (30 days / $5 credit)
