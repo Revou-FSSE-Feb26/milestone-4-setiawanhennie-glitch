@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTransactionDto, UpdateTransactionDto } from './dto/create-transaction.dto';
 import { AccountsService } from '../accounts/accounts.service';
+import { TransactionType } from '@prisma/client';
 
 @Injectable()
 export class TransactionsService {
@@ -22,8 +23,8 @@ export class TransactionsService {
       },
     });
 
-    // Update account balance
-    if (dto.type === 'income' || dto.type === 'expense') {
+    // Update account balance (only for income/expense, not transfers)
+    if (dto.type === TransactionType.income || dto.type === TransactionType.expense) {
       await this.accountsService.updateBalance(
         dto.accountId,
         dto.amount,
@@ -54,7 +55,7 @@ export class TransactionsService {
     });
   }
 
-  async findByType(type: string) {
+  async findByType(type: TransactionType) {
     return this.prisma.transaction.findMany({
       where: { type },
     });
@@ -63,19 +64,22 @@ export class TransactionsService {
   async update(id: number, dto: UpdateTransactionDto) {
     const oldTransaction = await this.findOne(id);
 
-    // Reverse old transaction's effect
-    if (oldTransaction.type === 'income' || oldTransaction.type === 'expense') {
-      const reverseAmount = oldTransaction.type === 'income' 
-        ? -oldTransaction.amount.toNumber() 
+    // Reverse old transaction's effect on balance
+    if (oldTransaction.type === TransactionType.income || oldTransaction.type === TransactionType.expense) {
+      const reverseAmount = oldTransaction.type === TransactionType.income
+        ? -oldTransaction.amount.toNumber()
         : oldTransaction.amount.toNumber();
+      
       await this.accountsService.updateBalance(
         oldTransaction.account_id,
         reverseAmount,
-        oldTransaction.type === 'income' ? 'expense' : 'income',
+        oldTransaction.type === TransactionType.income 
+          ? TransactionType.expense 
+          : TransactionType.income,
       );
     }
 
-    // Update transaction
+    // Update the transaction
     const updatedTransaction = await this.prisma.transaction.update({
       where: { id },
       data: {
@@ -84,14 +88,14 @@ export class TransactionsService {
         type: dto.type,
         amount: dto.amount,
         description: dto.description,
-        transaction_date: dto.transaction_date 
-          ? new Date(dto.transaction_date) 
+        transaction_date: dto.transaction_date
+          ? new Date(dto.transaction_date)
           : undefined,
       },
     });
 
-    // Apply new transaction's effect
-    if (dto.type === 'income' || dto.type === 'expense') {
+    // Apply new transaction's effect on balance
+    if (dto.type === TransactionType.income || dto.type === TransactionType.expense) {
       await this.accountsService.updateBalance(
         dto.accountId || oldTransaction.account_id,
         dto.amount || updatedTransaction.amount.toNumber(),
@@ -105,15 +109,18 @@ export class TransactionsService {
   async delete(id: number) {
     const transaction = await this.findOne(id);
 
-    // Reverse transaction's effect
-    if (transaction.type === 'income' || transaction.type === 'expense') {
-      const reverseAmount = transaction.type === 'income' 
-        ? -transaction.amount.toNumber() 
+    // Reverse transaction's effect on balance
+    if (transaction.type === TransactionType.income || transaction.type === TransactionType.expense) {
+      const reverseAmount = transaction.type === TransactionType.income
+        ? -transaction.amount.toNumber()
         : transaction.amount.toNumber();
+      
       await this.accountsService.updateBalance(
         transaction.account_id,
         reverseAmount,
-        transaction.type === 'income' ? 'expense' : 'income',
+        transaction.type === TransactionType.income
+          ? TransactionType.expense
+          : TransactionType.income,
       );
     }
 
@@ -123,12 +130,12 @@ export class TransactionsService {
   }
 
   async findAllWithCategory() {
-  return this.prisma.transaction.findMany({
-    include: {
-      category: true,
-    },
-  });
-}
+    return this.prisma.transaction.findMany({
+      include: {
+        category: true,
+      },
+    });
+  }
 
   async findOneWithCategory(id: number) {
     const transaction = await this.prisma.transaction.findUnique({
@@ -145,7 +152,7 @@ export class TransactionsService {
 
   async findByTypeWithCategory(type: string) {
     return this.prisma.transaction.findMany({
-      where: { type },
+      where: { type: type as TransactionType },
       include: {
         category: true,
       },

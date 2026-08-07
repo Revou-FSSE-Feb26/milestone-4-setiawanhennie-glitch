@@ -1,13 +1,13 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
-import { Transaction, UpdateTransactionDto, CreateTransactionDto } from './dto/create-transaction.dto';
+import { UpdateTransactionDto, CreateTransactionDto } from './dto/create-transaction.dto';
 
 @Controller('transactions')
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 
   @Post()
-  create(@Body() dto: CreateTransactionDto): Transaction {
+  create(@Body() dto: CreateTransactionDto) {
     return this.transactionsService.create(dto);
   }
 
@@ -47,12 +47,12 @@ export class TransactionsController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateTransactionDto
-  ): Transaction {
+  ) {
     return this.transactionsService.update(id, dto);
   }
 
   @Delete(':id')
-  delete(@Param('id', ParseIntPipe) id: number): { message: string } {
+  delete(@Param('id', ParseIntPipe) id: number) {
     this.transactionsService.delete(id);
     return { message: `Transaction ${id} deleted successfully` };
   }

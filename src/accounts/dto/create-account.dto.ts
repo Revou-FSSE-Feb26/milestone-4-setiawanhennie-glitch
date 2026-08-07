@@ -1,19 +1,19 @@
 import { IsString, IsNumber, IsEnum, IsOptional, Min } from 'class-validator';
+import { AccountType } from '@prisma/client';
 
 export class CreateAccountDto {
   @IsString()
   name: string;
 
-  @IsEnum(['cash', 'bank', 'e-wallet'])
-  type: string;
+  @IsEnum(AccountType)
+  type: AccountType;
 
   @IsNumber()
   @Min(0)
   @IsOptional()
-  balance?: number = 0;
+  balance?: number;
 
   @IsNumber()
-  @Min(1)
   userId: number;
 }
 
@@ -22,21 +22,12 @@ export class UpdateAccountDto {
   @IsOptional()
   name?: string;
 
-  @IsEnum(['cash', 'bank', 'e-wallet'])
+  @IsEnum(AccountType)
   @IsOptional()
-  type?: string;
+  type?: AccountType;
 
   @IsNumber()
   @Min(0)
   @IsOptional()
   balance?: number;
-}
-
-export class Account {
-  id: number;
-  user_id: number;
-  name: string;
-  type: string;
-  balance: number;
-  created_at: Date;
 }

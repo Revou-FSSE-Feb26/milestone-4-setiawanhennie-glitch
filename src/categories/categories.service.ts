@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CategoryType } from '@prisma/client'; 
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/create-category.dto';
 
 @Injectable()
@@ -29,7 +30,7 @@ export class CategoriesService {
     return category;
   }
 
-  async findByType(type: string) {
+  async findByType(type: CategoryType) {
     return this.prisma.category.findMany({
       where: { type },
     });
