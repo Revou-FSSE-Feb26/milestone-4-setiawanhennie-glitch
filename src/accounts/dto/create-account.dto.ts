@@ -3,10 +3,10 @@ import { AccountType } from '@prisma/client';
 
 export class CreateAccountDto {
   @IsString()
-  name: string;
+  name!: string;
 
   @IsEnum(AccountType)
-  type: AccountType;
+  type!: AccountType;
 
   @IsNumber()
   @Min(0)

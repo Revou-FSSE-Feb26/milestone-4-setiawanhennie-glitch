@@ -4,7 +4,7 @@ import {
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto, UpdateTransactionDto } from './dto/create-transaction.dto';
 import { CurrentUser } from '../auth/current-user.decorator';
-import { JwtPayload } from '../auth/dto/auth.dto';
+import type { JwtPayload } from '../auth/dto/auth.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 
@@ -20,10 +20,10 @@ export class TransactionsController {
 
   @Get()
   findAll(
+    @CurrentUser() user: JwtPayload,
     @Query('type') type?: string,
     @Query('account_id') accountId?: string,
     @Query('include') include?: string,
-    @CurrentUser() user?: JwtPayload,
   ) {
     if (accountId) {
       return this.transactionsService.findByAccountIdFor(user, Number(accountId));
@@ -41,8 +41,8 @@ export class TransactionsController {
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
     @Query('include') include?: string,
-    @CurrentUser() user?: JwtPayload,
   ) {
     return this.transactionsService.findOneFor(user, id, include === 'category');
   }

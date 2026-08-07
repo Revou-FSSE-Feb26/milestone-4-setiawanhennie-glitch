@@ -1,4 +1,5 @@
-import { Body, Controller, Post, Throttle } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 

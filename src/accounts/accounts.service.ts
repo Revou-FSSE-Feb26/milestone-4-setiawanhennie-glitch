@@ -14,13 +14,14 @@ export class AccountsService {
   ) {}
 
   // CREATE
-  async create(dto: CreateAccountDto) {
+  async createFor(user: JwtPayload, dto: CreateAccountDto) {
+    const ownerId = this.isAdmin(user) && dto.userId ? dto.userId : user.sub;
     return this.prisma.account.create({
       data: {
-        user_id: dto.userId,
+        user_id: ownerId,
         name: dto.name,
         type: dto.type,
-        balance: dto.balance || 0,
+        balance: dto.balance ?? 0,
       },
     });
   }
@@ -148,18 +149,6 @@ export class AccountsService {
   private isAdmin(user: JwtPayload) {
   return user.role === 'admin';
 }
-
-  async createFor(user: JwtPayload, dto: CreateAccountDto) {
-    const ownerId = this.isAdmin(user) && dto.userId ? dto.userId : user.sub;
-    return this.prisma.account.create({
-      data: {
-        user_id: ownerId,
-        name: dto.name,
-        type: dto.type,
-        balance: dto.balance ?? 0,
-      },
-    });
-  }
 
   async findAllFor(user: JwtPayload) {
     return this.prisma.account.findMany({

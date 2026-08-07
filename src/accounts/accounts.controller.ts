@@ -4,7 +4,7 @@ import {
 import { AccountsService } from './accounts.service';
 import { CreateAccountDto, UpdateAccountDto } from './dto/create-account.dto';
 import { CurrentUser } from '../auth/current-user.decorator';
-import { JwtPayload } from '../auth/dto/auth.dto';
+import type { JwtPayload } from '../auth/dto/auth.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 
