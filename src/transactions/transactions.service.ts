@@ -2,7 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTransactionDto, UpdateTransactionDto } from './dto/create-transaction.dto';
 import { AccountsService } from '../accounts/accounts.service';
-import { TransactionType } from '@prisma/client';
+
+const TransactionType = {
+  income: 'income',
+  expense: 'expense',
+  transfer: 'transfer',
+} as const;
+
+type TransactionType = (typeof TransactionType)[keyof typeof TransactionType];
 
 @Injectable()
 export class TransactionsService {
