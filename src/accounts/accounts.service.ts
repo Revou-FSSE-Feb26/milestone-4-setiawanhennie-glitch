@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAccountDto, UpdateAccountDto } from './dto/create-account.dto';
 import { BalanceCalculatorService } from 'src/balance/balance-calculator.service';
+import { TransactionType } from '@prisma/client';
 
 @Injectable()
 export class AccountsService {
