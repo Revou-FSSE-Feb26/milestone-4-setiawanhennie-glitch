@@ -84,10 +84,19 @@ async function main() {
     },
   });
 
-  const carolBusiness = await prisma.account.create({
+  const carolPersonal = await prisma.account.create({
     data: {
       user_id: carol.id,
       name: 'Carol Business',
+      type: 'bank',
+      balance: 15000.0,
+    },
+  });
+
+  const carolPersonal = await prisma.account.create({
+    data: {
+      user_id: carol.id,
+      name: 'Carol Personal',
       type: 'bank',
       balance: 15000.0,
     },
