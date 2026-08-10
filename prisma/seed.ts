@@ -84,7 +84,7 @@ async function main() {
     },
   });
 
-  const carolPersonal = await prisma.account.create({
+  const carolBusiness = await prisma.account.create({
     data: {
       user_id: carol.id,
       name: 'Carol Business',
