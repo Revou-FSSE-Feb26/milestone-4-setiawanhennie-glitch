@@ -2,7 +2,7 @@
 
 A personal-finance tracker backend built with **NestJS**, **TypeScript**, **Prisma ORM**, and **PostgreSQL (Supabase)**. Users can manage accounts, categories, and transactions with automatic balance recalculation, secured by JWT authentication and role-based access control.
 
-🔗 **Live URL (Railway):** `milestone-4-setiawanhennie-glitch-production.up.railway.app`
+🔗 **Live URL (Railway):** `https://milestone-4-setiawanhennie-glitch-production.up.railway.app`
 
 ---
 
@@ -39,8 +39,8 @@ A personal-finance tracker backend built with **NestJS**, **TypeScript**, **Pris
 
 ```bash
 # 1. Clone & install
-git clone <your-repo-url>
-cd <your-repo-url>
+git clone https://github.com/Revou-FSSE-Feb26/milestone-4-setiawanhennie-glitch
+cd milestone-4-setiawanhennie-glitch
 npm install
 
 # 2. Configure environment
@@ -130,13 +130,12 @@ CORS_ORIGIN=http://localhost:3000
 
 ```bash
 # 1. Login
-curl -X POST https://<live-url>/auth/login \
+curl -X POST https://milestone-4-setiawanhennie-glitch-production.up.railway.app/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"alice@example.com","password":"password123"}'
-# → { "access_token": "eyJhbGciOi..." }
 
 # 2. Use the token
-curl https://<live-url>/accounts \
+curl https://milestone-4-setiawanhennie-glitch-production.up.railway.app/accounts \
   -H "Authorization: Bearer eyJhbGciOi..."
 ```
 
@@ -179,9 +178,11 @@ The balance rules (income adds, expense subtracts, transfer is neutral) were pre
 ## 🧪 Testing
 
 - **Postman collection:** `docs/fintrack.postman_collection.json`
-  - Import together with the environment (`base_url`, `token` variables).
-  - The collection sends `Authorization: Bearer {{token}}` automatically; the **login** request's test script saves the token into the environment.
-- **Smoke test examples (request + response per endpoint, incl. blocked 401/403 cases):** `docs/api-smoke-test.md`
+- **Postman environment:** `docs/fintrack.postman_environment.json` (defines `base_url` and `token` variables)
+  - Import both files. Select "FinTrack Environment" in the top-right dropdown.
+  - The collection sends `Authorization: Bearer {{token}}` automatically.
+  - The **login** request's test script saves the token into the environment after login.
+- **Smoke test examples** (request + response per endpoint, incl. blocked 401/403 cases): `docs/api-smoke-test.md`
 
 ---
 
