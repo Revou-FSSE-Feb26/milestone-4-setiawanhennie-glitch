@@ -3,34 +3,72 @@
     "name": "FinTrack API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
   "item": [
     {
-      "name": "Users",
+      "name": "Auth",
       "item": [
         {
-          "name": "Create User",
+          "name": "Register",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"user\"\n}"
+              "raw": "{\n  \"name\": \"Test Person\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/users",
+              "raw": "{{base_url}}/auth/register",
               "host": ["{{base_url}}"],
-              "path": ["users"]
+              "path": ["auth", "register"]
             }
           },
           "response": []
         },
         {
-          "name": "Get All Users",
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.access_token) {",
+                  "    pm.environment.set('token', json.access_token);",
+                  "    console.log('Token saved automatically!');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get All Users (admin only)",
           "request": {
             "method": "GET",
             "url": {
@@ -62,15 +100,10 @@
           "name": "Create Account",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"My Savings\",\n  \"type\": \"bank\",\n  \"balance\": 5000,\n  \"userId\": 1\n}"
+              "raw": "{\n  \"name\": \"My Savings\",\n  \"type\": \"bank\",\n  \"balance\": 5000\n}"
             },
             "url": {
               "raw": "{{base_url}}/accounts",
@@ -93,19 +126,42 @@
           "response": []
         },
         {
-          "name": "Get Account with Transactions",
+          "name": "Get Account by ID",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/accounts/1?include=transactions",
+              "raw": "{{base_url}}/accounts/1",
+              "host": ["{{base_url}"],
+              "path": ["accounts", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Account (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Holiday Fund 2026\",\n  \"balance\": 6000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/accounts/1",
               "host": ["{{base_url}}"],
-              "path": ["accounts", "1"],
-              "query": [
-                {
-                  "key": "include",
-                  "value": "transactions"
-                }
-              ]
+              "path": ["accounts", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Account",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/accounts/1",
+              "host": ["{{base_url}}"],
+              "path": ["accounts", "1"]
             }
           },
           "response": []
@@ -116,15 +172,10 @@
       "name": "Categories",
       "item": [
         {
-          "name": "Create Category",
+          "name": "Create Category (admin only)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Shopping\",\n  \"type\": \"expense\"\n}"
@@ -148,6 +199,60 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Get Categories by Type (expense)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/categories?type=expense",
+              "host": ["{{base_url}}"],
+              "path": ["categories"],
+              "query": [{ "key": "type", "value": "expense" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Category by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/categories/1",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Category (PATCH, admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Online Shopping\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/categories/1",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Category (admin)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/categories/1",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "1"]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -158,12 +263,7 @@
           "name": "Create Transaction",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"accountId\": 1,\n  \"categoryId\": 4,\n  \"type\": \"expense\",\n  \"amount\": 75.50,\n  \"description\": \"Grocery shopping\",\n  \"transaction_date\": \"2026-07-25\"\n}"
@@ -196,12 +296,74 @@
               "raw": "{{base_url}}/transactions?include=category",
               "host": ["{{base_url}}"],
               "path": ["transactions"],
-              "query": [
-                {
-                  "key": "include",
-                  "value": "category"
-                }
-              ]
+              "query": [{ "key": "include", "value": "category" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transactions by Type",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/transactions?type=expense",
+              "host": ["{{base_url}}"],
+              "path": ["transactions"],
+              "query": [{ "key": "type", "value": "expense" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transaction by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/transactions/1",
+              "host": ["{{base_url}}"],
+              "path": ["transactions", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transaction by ID with Category",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/transactions/1?include=category",
+              "host": ["{{base_url}}"],
+              "path": ["transactions", "1"],
+              "query": [{ "key": "include", "value": "category" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Transaction (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 85.00,\n  \"description\": \"Updated grocery shopping\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transactions/1",
+              "host": ["{{base_url}}"],
+              "path": ["transactions", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Transaction",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/transactions/1",
+              "host": ["{{base_url}}"],
+              "path": ["transactions", "1"]
             }
           },
           "response": []
